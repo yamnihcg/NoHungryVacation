@@ -170,12 +170,6 @@ def getListOfRestaurants():
     completeRatingsArray = getDuplicateRatingsArray(allBusinessesID)
     return getFirstNRestaurants(25, completeRatingsArray, ratingToAddressMap)
 
-def main(): 
-    print(getListOfRestaurants(tripLength))
-    
-if __name__ == "__main__":
-    main()
-
 def mapIDToLunchHours(postBudgetFilterID, listOfWeekdays, lunchTime, dinnerTime):
     numWeekdays = len(listOfWeekdays)
     lTime = timeStringToMilitaryTime(lunchTime)
@@ -242,6 +236,13 @@ def mapIDToDinnerHours(postBudgetFilterID, listOfWeekdays, lunchTime, dinnerTime
 
 def getDinnerTimeAvailability():
     return dinnerTimeAvailability
+
+
+def main(): 
+    print(getListOfRestaurants(tripLength))
+    
+if __name__ == "__main__":
+    main()
 
 
 
