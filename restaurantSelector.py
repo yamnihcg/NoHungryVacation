@@ -17,6 +17,8 @@ api_key = 'taiZp9tjrx35L7DjcznI97roBu-KCSW-hJ9Dp1jJ8bCLlkhGVHCGR8HFmC33h4N-DxDo9
 businessSearchHeaders = {'Authorization': 'Bearer %s' % api_key}
 businessSearchURL = 'https://api.yelp.com/v3/businesses/search'
 
+# Helper functions to parse API data to generate menu 
+
 from menuBuilderHelperFunctions import determineTicker
 from menuBuilderHelperFunctions import timeStringToMilitaryTime
 from menuBuilderHelperFunctions import validTime
@@ -26,10 +28,12 @@ from menuBuilderHelperFunctions import returnAddressAndNameString
 from menuBuilderHelperFunctions import weekdayInformation
 from menuBuilderHelperFunctions import weekdayNames
 
+# Function to handle cuisine name input (CLI requests cuisine name input one by one)
+
 def getCuisineNames():
     cuisineArray = []
     while(True):
-        cuisineInput = input("Enter at least 5 cuisines that you like. If you want to stop adding cuisines, type STOP ")
+        cuisineInput = input("Enter cuisines that you like. If you want to stop adding cuisines, type STOP ")
         filteredCuisineInput = cuisineInput.strip()
         tempCopy = cuisineInput.upper()
         if(tempCopy == 'STOP'):
@@ -57,8 +61,7 @@ endDay = int(input("What day do you want to start the plan? Ex: 21   "))
 print("Retrieving your restaurants......")
 
 
-
-#Relevant parameters for filtering information
+#Relevant parameters to judge how many restaurants to select 
 
 budgetTicker = determineTicker(budget)
 fullLocationInfo = location + ", " + stateAbbreviation
@@ -67,9 +70,9 @@ endDate = datetime.datetime(endYear, endMonth, endDay)
 rangeStartDate = date(startYear, startMonth, startDay)
 rangeEndDate = date(endYear, endMonth, endDay)
 tripLength = abs(endDate-startDate).days + 1
-
-#To Account for Lunch and Dinner
 tripLength = tripLength * 2
+
+# Account for Lunch+Dinner
 
 #Extra 10 suggestions if user doesn't like their current menu
 
@@ -100,7 +103,11 @@ def getActualWeekdays():
 ratingToAddressMap = {}
 nameToIDMap = {}
 
-#This functions maps the rating to the name and the addresses of the establishments.
+'''
+This function makes a Yelp Business Search API request. The request retrieves information about restaurants that 
+have the specified cuisine type and are near the location specified by the user. 
+'''
+
 def makeBusinessSearchAPIRequest(cuisineType, fullLocationInfo, businessSearchParams, businessSearchHeaders):
     businessSearchParams = {'term': cuisineType,'location': fullLocationInfo}
     businessSearchReq = requests.get(businessSearchURL, params=businessSearchParams, headers=businessSearchHeaders)
@@ -109,12 +116,19 @@ def makeBusinessSearchAPIRequest(cuisineType, fullLocationInfo, businessSearchPa
 
 #Obtaining all the Available Restaurants according to the budgets(first filter)
 
+''' This function returns the restaurant ID's of all businesses that are in the price range of the user. '''
+
 def filterBusinessesByBudget(listOfBusinesses, budgetTicker):
     budgetIDList = []
     for i in range(len(listOfBusinesses['businesses'])):
-        if(listOfBusinesses['businesses'][i]['price'] in budgetTicker):
-            budgetIDList.append(listOfBusinesses['businesses'][i]['id'])
+        if 'price' in listOfBusinesses['businesses'][i].keys():
+            if listOfBusinesses['businesses'][i]['price'] in budgetTicker:
+                budgetIDList.append(listOfBusinesses['businesses'][i]['id'])
     return budgetIDList
+
+''' This function returns a list of all unique ratings of restaurants, given the businessID 
+of all restaurants that match our desired cuisine types and budget. The function also maps 
+each unique rating to the list of restaurants that have that rating. '''
 
 def getDuplicateRatingsArray(allBusinessesID):
     ratingsArray = []
@@ -144,6 +158,11 @@ def getDuplicateRatingsArray(allBusinessesID):
 
 restaurantToCuisineMap = {}
 
+'''
+This function retrieves the Top N Restaurants based on rating after restaurants 
+have been filtered based on cuisine and price.
+'''
+
 def getFirstNRestaurants(tripLength, completeRatingsArray, ratingToAddressMap):
     curCount = 0
     finalListOfRestaurants = []
@@ -167,8 +186,11 @@ def getListOfRestaurants():
         budgetFilteredID = filterBusinessesByBudget(listOfBusinesses, budgetTicker)
         for i in range(len(budgetFilteredID)):
             allBusinessesID.append(budgetFilteredID[i])
+        
     completeRatingsArray = getDuplicateRatingsArray(allBusinessesID)
-    return getFirstNRestaurants(25, completeRatingsArray, ratingToAddressMap)
+    return getFirstNRestaurants(tripLength * 2, completeRatingsArray, ratingToAddressMap)
+
+''' Map for Restaurant ID to Days / Lunch hours '''
 
 def mapIDToLunchHours(postBudgetFilterID, listOfWeekdays, lunchTime, dinnerTime):
     numWeekdays = len(listOfWeekdays)
@@ -204,6 +226,8 @@ def mapIDToLunchHours(postBudgetFilterID, listOfWeekdays, lunchTime, dinnerTime)
 def getLunchTimeAvailability(): 
     return lunchTimeAvailability
 
+''' Map for Restaurant ID to Days / Dinner Hours '''
+
 def mapIDToDinnerHours(postBudgetFilterID, listOfWeekdays, lunchTime, dinnerTime):
     numWeekdays = len(listOfWeekdays)
     dTime = timeStringToMilitaryTime(dinnerTime)
@@ -237,9 +261,8 @@ def mapIDToDinnerHours(postBudgetFilterID, listOfWeekdays, lunchTime, dinnerTime
 def getDinnerTimeAvailability():
     return dinnerTimeAvailability
 
-
 def main(): 
-    print(getListOfRestaurants(tripLength))
+    print(getListOfRestaurants())
     
 if __name__ == "__main__":
     main()

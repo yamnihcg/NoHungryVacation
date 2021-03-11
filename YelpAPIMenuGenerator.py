@@ -13,12 +13,12 @@ from restaurantSelector import getRangeOfDates
 from restaurantSelector import getListOfRestaurants
 from restaurantSelector import name
 
-
-
+''' Information necessary ''' 
 weekdayNames = getActualWeekdays()
 actualDates = getRangeOfDates()
 listOfRestaurants = getListOfRestaurants()
 
+''' Helper Function: Split Name and Address in Restaurant Description '''
 
 def separateNameAndAddress(restaurant):
     stoppingIndex = 0
@@ -26,6 +26,8 @@ def separateNameAndAddress(restaurant):
         if restaurant[i:i+8] == 'Address:':
             stoppingIndex = i 
     return [restaurant[0:stoppingIndex], restaurant[stoppingIndex:len(restaurant)]]
+
+''' Formats the final .txt file output '''
 
 def writeThePlanningFile(listOfRestaurants):
     finalPlannerFile = open(name + "TripMenu.txt", "w+")
